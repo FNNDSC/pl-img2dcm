@@ -140,6 +140,22 @@ class Img2dcm(ChrisApp):
         writer.KeepOriginalImageUIDOn()
         writer.SetFileName('png2dcm.dcm')
         writer.Execute(img)
+        # dummy image
+
+        image = pydicom.dcmread('/home/sandip/image2.dcm')
+        img1 = pydicom.dcmread('/home/sandip/Downloads/chris_feed_211_pl-dircopy_1687_data_chris_feed_210_pl-        dircopy_1683_data_SERVICES_PACS_PACSDCM_4346815-AKIKI_MOUNIR-20090218_PACSDCM_4346815-AKIKI_MOUNIR-20090218_XR-        Hips_to_Ankles_No_Ruler_-26348628-20220105-012Y-004704d_16.dcm')
+
+        print("Setting file meta information...")
+        for item in img1.dir():
+            image[item] = img1[item]
+
+
+
+
+
+        print("Writing test file", "image.dcm")
+        image.save_as("image.dcm")
+        print("File saved.")
 
     def show_man_page(self):
         """
