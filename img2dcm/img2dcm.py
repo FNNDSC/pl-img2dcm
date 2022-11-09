@@ -10,13 +10,9 @@
 
 from chrisapp.base import ChrisApp
 import os
-import sys
-import time
 import SimpleITK as sitk
 import pydicom as dicom
 import glob
-import numpy as np
-from PIL import Image
 from pydicom import dcmread
 
 Gstr_title = r"""
@@ -127,6 +123,20 @@ class Img2dcm(ChrisApp):
         Define the CLI arguments accepted by this plugin app.
         Use self.add_argument to specify a new app argument.
         """
+        
+        self.add_argument(  '--inputImageFilter','-i',
+                            dest         = 'inputImageFilter',
+                            type         = str,
+                            optional     = True,
+                            help         = 'Input image file filter',
+                            default      = '**/*.png')
+                            
+        self.add_argument(  '--inputDCMFilter','-d',
+                            dest         = 'inputDCMFilter',
+                            type         = str,
+                            optional     = True,
+                            help         = 'Input dicom file filter',
+                            default      = '**/*.dcm')
 
     def run(self, options):
         """
@@ -134,28 +144,51 @@ class Img2dcm(ChrisApp):
         """
         print(Gstr_title)
         print('Version: %s' % self.get_version())
-        img = sitk.ReadImage(image_path)
-
-        writer = sitk.ImageFileWriter()
-        writer.KeepOriginalImageUIDOn()
-        writer.SetFileName('png2dcm.dcm')
-        writer.Execute(img)
-        # dummy image
-
-        image = pydicom.dcmread('/home/sandip/image2.dcm')
-        img1 = pydicom.dcmread('/home/sandip/Downloads/chris_feed_211_pl-dircopy_1687_data_chris_feed_210_pl-        dircopy_1683_data_SERVICES_PACS_PACSDCM_4346815-AKIKI_MOUNIR-20090218_PACSDCM_4346815-AKIKI_MOUNIR-20090218_XR-        Hips_to_Ankles_No_Ruler_-26348628-20220105-012Y-004704d_16.dcm')
-
-        print("Setting file meta information...")
-        for item in img1.dir():
-            image[item] = img1[item]
-
-
-
-
-
-        print("Writing test file", "image.dcm")
-        image.save_as("image.dcm")
-        print("File saved.")
+        no_include_tags = ['BitsAllocated',
+                           'BitsStored',
+                           'PixelData',
+                           'PixelIntensityRelationship',
+                           'PixelIntensityRelationshipSign',
+                           'PixelRepresentation',
+                           'PixelSpacing',
+                           'PixelSpacingCalibrationDescription',
+                           'PixelSpacingCalibrationType',
+                           'SamplesPerPixel',
+                           'PhotometricInterpretation',
+                           'Rows',
+                           'Columns']
+                           
+        img_str_glob = '%s/%s' % (options.inputdir,options.inputImageFilter)        
+        l_img_datapath = glob.glob(img_str_glob, recursive=True)
+        
+        dcm_str_glob = '%s/%s' % (options.inputdir,options.inputDCMFilter)        
+        l_dcm_datapath = glob.glob(dcm_str_glob, recursive=True)
+        
+        for img_datapath in l_img_datapath:
+            img_file_name = img_datapath.split('/')[-1]
+            img_file_stem = img_file_name.split('.png')[0]
+            temp_dcm_file = os.path.join('/tmp',img_file_stem + '.dcm')
+            img = sitk.ReadImage(img_datapath)
+            writer = sitk.ImageFileWriter()
+            writer.KeepOriginalImageUIDOn()
+            writer.SetFileName(temp_dcm_file)
+            writer.Execute(img)
+            
+            
+            
+            for dcm_datapath in l_dcm_datapath:
+                if img_file_stem in dcm_datapath:
+                    dcm_image = dicom.dcmread(dcm_datapath)
+                    tmp_dcm_image = dicom.dcmread(temp_dcm_file)
+                    print("Setting file meta information...")
+                    for item in dcm_image.dir():
+                        if item not in no_include_tags:
+                            tmp_dcm_image[item] = dcm_image[item]
+                    print("Writing test file", img_file_stem+".dcm")
+                    tmp_dcm_image.save_as(os.path.join(options.outputdir,img_file_stem+".dcm"))
+                    print("File saved.")
+        
+             
 
     def show_man_page(self):
         """
