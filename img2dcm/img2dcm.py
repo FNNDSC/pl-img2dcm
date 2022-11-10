@@ -28,11 +28,6 @@ Gstr_title = r"""
 
 Gstr_synopsis = """
 
-(Edit this in-line help for app specifics. At a minimum, the 
-flags below are supported -- in the case of DS apps, both
-positional arguments <inputDir> and <outputDir>; for FS and TS apps
-only <outputDir> -- and similarly for <in> <out> directories
-where necessary.)
 
     NAME
 
@@ -40,7 +35,7 @@ where necessary.)
 
     SYNOPSIS
 
-        docker run --rm fnndsc/pl-img2dcm img2dcm                     \\
+        docker run --rm fnndsc/pl-img2dcm img2dcm                       \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -154,6 +149,7 @@ class Img2dcm(ChrisApp):
                            'PixelSpacingCalibrationDescription',
                            'PixelSpacingCalibrationType',
                            'SamplesPerPixel',
+                           'SeriesInstanceUID'
                            'PhotometricInterpretation',
                            'Rows',
                            'Columns']
@@ -184,7 +180,9 @@ class Img2dcm(ChrisApp):
                     for item in dcm_image.dir():
                         if item not in no_include_tags:
                             tmp_dcm_image[item] = dcm_image[item]
-                    print("Writing test file", img_file_stem+".dcm")
+                    print("Setting Series Instance UID")
+                    tmp_dcm_image.SeriesInstanceUID = dicom.uid.generate_uid()
+                    print("Writing dicom file", img_file_stem+".dcm")
                     tmp_dcm_image.save_as(os.path.join(options.outputdir,img_file_stem+".dcm"))
                     print("File saved.")
         
