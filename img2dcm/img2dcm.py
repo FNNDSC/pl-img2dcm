@@ -149,7 +149,7 @@ class Img2dcm(ChrisApp):
                            'PixelSpacingCalibrationDescription',
                            'PixelSpacingCalibrationType',
                            'SamplesPerPixel',
-                           'SeriesInstanceUID'
+                           'SeriesInstanceUID',
                            'PhotometricInterpretation',
                            'Rows',
                            'Columns']
