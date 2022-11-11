@@ -34,6 +34,8 @@ Usage
 .. code::
 
     docker run --rm fnndsc/pl-img2dcm img2dcm
+        [-i|--inputImageFilter <imageFilter>]                      
+        [-d|--inputDCMFilter <dicomFilter>]                      
         [-h|--help]
         [--json] [--man] [--meta]
         [--savejson <DIR>]
@@ -46,6 +48,14 @@ Arguments
 ~~~~~~~~~
 
 .. code::
+
+    [-i|--inputImageFilter <imageFilter>]
+    A glob pattern string, default is "**/*.png", representing the input
+    file pattern to analyze.
+    
+    [-d|--inputDCMFilter <dicomFilter>]
+    A glob pattern string, default is "**/*.dcm", representing the input
+    dicom files to fetch tags.
 
     [-h] [--help]
     If specified, show help message and exit.

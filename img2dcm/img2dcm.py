@@ -36,6 +36,8 @@ Gstr_synopsis = """
     SYNOPSIS
 
         docker run --rm fnndsc/pl-img2dcm img2dcm                       \\
+            [-i|--inputImageFilter <imageFilter>]                       \\
+            [-d|--inputDCMFilter <dicomFilter>]                         \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -52,7 +54,7 @@ Gstr_synopsis = """
 
             docker run --rm -u $(id -u)                             \
                 -v $(pwd)/in:/incoming -v $(pwd)/out:/outgoing      \
-                fnndsc/pl-img2dcm img2dcm                        \
+                fnndsc/pl-img2dcm img2dcm                           \
                 /incoming /outgoing
 
     DESCRIPTION
@@ -60,7 +62,14 @@ Gstr_synopsis = """
         `img2dcm` ...
 
     ARGS
-
+        [-i|--inputImageFilter <imageFilter>]
+        A glob pattern string, default is "**/*.png", representing the input
+        file pattern to analyze.
+    
+        [-d|--inputDCMFilter <dicomFilter>]
+        A glob pattern string, default is "**/*.dcm", representing the input
+        dicom files to fetch tags.
+ 
         [-h] [--help]
         If specified, show help message and exit.
         
@@ -166,7 +175,6 @@ class Img2dcm(ChrisApp):
             temp_dcm_file = os.path.join('/tmp',img_file_stem + '.dcm')
             img = sitk.ReadImage(img_datapath)
             writer = sitk.ImageFileWriter()
-            writer.KeepOriginalImageUIDOn()
             writer.SetFileName(temp_dcm_file)
             writer.Execute(img)
             
