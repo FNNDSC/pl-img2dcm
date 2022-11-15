@@ -148,6 +148,13 @@ class Img2dcm(ChrisApp):
         """
         print(Gstr_title)
         print('Version: %s' % self.get_version())
+        
+        # Output the space of CLI
+        d_options = vars(options)
+        for k,v in d_options.items():
+            print("%20s: %-40s" % (k, v))
+        print("")
+
         no_include_tags = ['BitsAllocated',
                            'BitsStored',
                            'PixelData',
