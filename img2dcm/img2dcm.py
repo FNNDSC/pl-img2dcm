@@ -174,32 +174,43 @@ class Img2dcm(ChrisApp):
         l_img_datapath = glob.glob(img_str_glob, recursive=True)
         
         dcm_str_glob = '%s/%s' % (options.inputdir,options.inputDCMFilter)        
-        l_dcm_datapath = glob.glob(dcm_str_glob, recursive=True)
+        l_dcm_datapath = glob.glob(dcm_str_glob, recursive=True)  
         
-        for img_datapath in l_img_datapath:
-            img_file_name = img_datapath.split('/')[-1]
-            img_file_stem = img_file_name.split('.png')[0]
-            temp_dcm_file = os.path.join('/tmp',img_file_stem + '.dcm')
-            img = sitk.ReadImage(img_datapath)
-            writer = sitk.ImageFileWriter()
-            writer.SetFileName(temp_dcm_file)
-            writer.Execute(img)
+        dcm_dirs = []
+        for dcm_datapath in l_dcm_datapath:
+            dcm_dirs.append(os.path.dirname(dcm_datapath))
             
-            
-            
-            for dcm_datapath in l_dcm_datapath:
-                if img_file_stem in dcm_datapath:
-                    dcm_image = dicom.dcmread(dcm_datapath)
-                    tmp_dcm_image = dicom.dcmread(temp_dcm_file)
-                    print("Setting file meta information...")
-                    for item in dcm_image.dir():
-                        if item not in no_include_tags:
-                            tmp_dcm_image[item] = dcm_image[item]
-                    print("Setting Series Instance UID")
-                    tmp_dcm_image.SeriesInstanceUID = dicom.uid.generate_uid()
-                    print("Writing dicom file", img_file_stem+".dcm")
-                    tmp_dcm_image.save_as(os.path.join(options.outputdir,img_file_stem+".dcm"))
-                    print("File saved.")
+        unique_dcm_dirs = set(dcm_dirs)
+        
+        
+        for dcm_dir in unique_dcm_dirs:
+            output_dirpath = dcm_dir.replace(options.inputdir,options.outputdir)
+            os.makedirs(output_dirpath,exist_ok=True)
+            unique_series_uid = dicom.uid.generate_uid()
+            print(f"\n\nGenerated series instance uid is {unique_series_uid}")
+            # traverse through all dicom files in this dir
+            for file in glob.glob(dcm_dir + options.inputDCMFilter):
+                dcm_image = dicom.dcmread(file)
+                for img_datapath in l_img_datapath:
+                    dcm_file_name = file.split('/')[-1]
+                    dcm_file_stem = dcm_file_name.split('.dcm')[0]
+                    if dcm_file_stem in img_datapath:
+                        temp_dcm_file = os.path.join('/tmp',dcm_file_stem + '.dcm')
+                        img = sitk.ReadImage(img_datapath)
+                        writer = sitk.ImageFileWriter()
+                        writer.SetFileName(temp_dcm_file)
+                        writer.Execute(img) 
+                        
+                        tmp_dcm_image = dicom.dcmread(temp_dcm_file)
+                        print("Setting file meta information...")
+                        for item in dcm_image.dir():
+                            if item not in no_include_tags:
+                                tmp_dcm_image[item] = dcm_image[item]
+                        print(f"Setting Series Instance UID {unique_series_uid}")
+                        tmp_dcm_image.SeriesInstanceUID = unique_series_uid
+                        print("Writing dicom file", dcm_file_stem+".dcm")
+                        tmp_dcm_image.save_as(os.path.join(output_dirpath,dcm_file_stem+".dcm"))
+                        print("File saved.")    
         
              
 
