@@ -59,7 +59,7 @@ Gstr_synopsis = """
 
     DESCRIPTION
 
-        `img2dcm` ...
+        `img2dcm` is an app to convert an input image to a DICOM file
 
     ARGS
         [-i|--inputImageFilter <imageFilter>]
@@ -98,7 +98,7 @@ class Img2dcm(ChrisApp):
     An app to convert an input image to a DICOM file
     """
     PACKAGE                 = __package__
-    TITLE                   = 'A image to DICOM converter'
+    TITLE                   = 'An image to DICOM converter'
     CATEGORY                = ''
     TYPE                    = 'ds'
     ICON                    = ''   # url of an icon image
@@ -154,7 +154,8 @@ class Img2dcm(ChrisApp):
         for k,v in d_options.items():
             print("%20s: %-40s" % (k, v))
         print("")
-
+        
+        # List of dicom tags to be ignore while copying from DICOM files
         no_include_tags = ['BitsAllocated',
                            'BitsStored',
                            'PixelData',
@@ -186,8 +187,10 @@ class Img2dcm(ChrisApp):
         for dcm_dir in unique_dcm_dirs:
             output_dirpath = dcm_dir.replace(options.inputdir,options.outputdir)
             os.makedirs(output_dirpath,exist_ok=True)
+            
             unique_series_uid = dicom.uid.generate_uid()
             print(f"\n\nGenerated series instance uid is {unique_series_uid}")
+            
             # traverse through all dicom files in this dir
             for file in glob.glob(dcm_dir + options.inputDCMFilter):
                 dcm_image = dicom.dcmread(file)

@@ -24,8 +24,8 @@ Description
 -----------
 
 
-``img2dcm`` is a *ChRIS ds-type* application that takes in ... as ... files
-and produces ...
+``img2dcm`` is a *ChRIS ds-type* application that takes in png & dcm files as input
+and converts png files to dcm files as output
 
 
 Usage
