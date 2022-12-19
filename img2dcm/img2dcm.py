@@ -212,7 +212,7 @@ class Img2dcm(ChrisApp):
                         print(f"Setting Series Instance UID {unique_series_uid}")
                         tmp_dcm_image.SeriesInstanceUID = unique_series_uid
                         
-                        dcm_file_stem = str(tmp_dcm_image.InstanceNumber) + '-' + unique_series_uid
+                        #dcm_file_stem = str(tmp_dcm_image.InstanceNumber) + '-' + unique_series_uid
                         print("Writing dicom file", dcm_file_stem+".dcm")
                         
                         tmp_dcm_image.save_as(os.path.join(output_dirpath,dcm_file_stem+".dcm"))
