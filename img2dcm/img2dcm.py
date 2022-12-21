@@ -169,7 +169,9 @@ class Img2dcm(ChrisApp):
                            'SeriesInstanceUID',
                            'PhotometricInterpretation',
                            'Rows',
-                           'Columns']
+                           'Columns',
+                           'CollimatorRightVerticalEdge',
+                           'CollimatorLowerHorizontalEdge']
                            
         img_str_glob = '%s/%s' % (options.inputdir,options.inputImageFilter)        
         l_img_datapath = glob.glob(img_str_glob, recursive=True)
@@ -211,6 +213,8 @@ class Img2dcm(ChrisApp):
                                 tmp_dcm_image[item] = dcm_image[item]
                         print(f"Setting Series Instance UID {unique_series_uid}")
                         tmp_dcm_image.SeriesInstanceUID = unique_series_uid
+                        tmp_dcm_image.CollimatorRightVerticalEdge = str(tmp_dcm_image.Columns + 1)
+                        tmp_dcm_image.CollimatorLowerHorizontalEdge = str(tmp_dcm_image.Rows + 1)
                         
                         #dcm_file_stem = str(tmp_dcm_image.InstanceNumber) + '-' + unique_series_uid
                         print("Writing dicom file", dcm_file_stem+".dcm")
