@@ -162,7 +162,7 @@ class Img2dcm(ChrisApp):
                            'PixelIntensityRelationship',
                            'PixelIntensityRelationshipSign',
                            'PixelRepresentation',
-                           'PixelSpacing',
+
                            'PixelSpacingCalibrationDescription',
                            'PixelSpacingCalibrationType',
                            'SamplesPerPixel',
