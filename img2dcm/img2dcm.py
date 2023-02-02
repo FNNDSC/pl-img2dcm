@@ -9,21 +9,33 @@
 #
 
 from chrisapp.base import ChrisApp
-import os
+import os, sys
 import SimpleITK as sitk
 import pydicom as dicom
 import glob
 from pydicom import dcmread
+import time
+logger_format = (
+    "<green>{time:YYYY-MM-DD HH:mm:ss}</green> │ "
+    "<level>{level: <5}</level> │ "
+    "<yellow>{name: >28}</yellow>::"
+    "<cyan>{function: <30}</cyan> @"
+    "<cyan>{line: <4}</cyan> ║ "
+    "<level>{message}</level>"
+)
+logger.remove()
+logger.opt(colors = True)
+logger.add(sys.stderr, format=logger_format)
 
 Gstr_title = r"""
- _                  _____     _                
-(_)                / __  \   | |               
- _ _ __ ___   __ _ `' / /' __| | ___ _ __ ___  
-| | '_ ` _ \ / _` |  / /  / _` |/ __| '_ ` _ \ 
+ _                  _____     _
+(_)                / __  \   | |
+ _ _ __ ___   __ _ `' / /' __| | ___ _ __ ___
+| | '_ ` _ \ / _` |  / /  / _` |/ __| '_ ` _ \
 | | | | | | | (_| |./ /__| (_| | (__| | | | | |
 |_|_| |_| |_|\__, |\_____/\__,_|\___|_| |_| |_|
-              __/ |                            
-             |___/                             
+              __/ |
+             |___/
 """
 
 Gstr_synopsis = """
@@ -46,50 +58,53 @@ Gstr_synopsis = """
             [-v <level>] [--verbosity <level>]                          \\
             [--version]                                                 \\
             <inputDir>                                                  \\
-            <outputDir> 
+            <outputDir>
 
     BRIEF EXAMPLE
 
         * Bare bones execution
 
-            docker run --rm -u $(id -u)                             \
-                -v $(pwd)/in:/incoming -v $(pwd)/out:/outgoing      \
-                fnndsc/pl-img2dcm img2dcm                           \
+            docker run --rm -u $(id -u)                                 \\
+                -v $(pwd)/in:/incoming -v $(pwd)/out:/outgoing          \\
+                fnndsc/pl-img2dcm img2dcm                               \\
                 /incoming /outgoing
 
     DESCRIPTION
 
-        `img2dcm` is an app to convert an input image to a DICOM file
+        `img2dcm` is an app that simply converts an input image (jpg/png) to
+        a DICOM format. It does require a base/reference DICOM image from
+        which to import the tag header information.
 
     ARGS
+
         [-i|--inputImageFilter <imageFilter>]
         A glob pattern string, default is "**/*.png", representing the input
         file pattern to analyze.
-    
+
         [-d|--inputDCMFilter <dicomFilter>]
         A glob pattern string, default is "**/*.dcm", representing the input
         dicom files to fetch tags.
- 
+
         [-h] [--help]
         If specified, show help message and exit.
-        
+
         [--json]
         If specified, show json representation of app and exit.
-        
+
         [--man]
         If specified, print (this) man page and exit.
 
         [--meta]
         If specified, print plugin meta data and exit.
-        
-        [--savejson <DIR>] 
-        If specified, save json representation file to DIR and exit. 
-        
+
+        [--savejson <DIR>]
+        If specified, save json representation file to DIR and exit.
+
         [-v <level>] [--verbosity <level>]
         Verbosity level for app. Not used currently.
-        
+
         [--version]
-        If specified, print version number and exit. 
+        If specified, print version number and exit.
 """
 
 
@@ -127,14 +142,14 @@ class Img2dcm(ChrisApp):
         Define the CLI arguments accepted by this plugin app.
         Use self.add_argument to specify a new app argument.
         """
-        
+
         self.add_argument(  '--inputImageFilter','-i',
                             dest         = 'inputImageFilter',
                             type         = str,
                             optional     = True,
                             help         = 'Input image file filter',
                             default      = '**/*.png')
-                            
+
         self.add_argument(  '--inputDCMFilter','-d',
                             dest         = 'inputDCMFilter',
                             type         = str,
@@ -142,19 +157,31 @@ class Img2dcm(ChrisApp):
                             help         = 'Input dicom file filter',
                             default      = '**/*.dcm')
 
+    def preamble_show(self, options) -> None:
+        """
+        Just show some preamble "noise" in the output terminal
+        """
+
+        LOG(Gstr_title)
+        LOG('Version: %s' % self.get_version())
+
+        LOG("plugin arguments...")
+        for k,v in options.__dict__.items():
+             LOG("%25s:  [%s]" % (k, v))
+        LOG("")
+
+        LOG("base environment...")
+        for k,v in os.environ.items():
+             LOG("%25s:  [%s]" % (k, v))
+        LOG("")
+
     def run(self, options):
         """
         Define the code to be run by this plugin app.
         """
-        print(Gstr_title)
-        print('Version: %s' % self.get_version())
-        
-        # Output the space of CLI
-        d_options = vars(options)
-        for k,v in d_options.items():
-            print("%20s: %-40s" % (k, v))
-        print("")
-        
+        st: float = time.time()
+        self.preamble_show(options)
+
         # List of dicom tags to be ignore while copying from DICOM files
         no_include_tags = ['BitsAllocated',
                            'BitsStored',
@@ -172,27 +199,27 @@ class Img2dcm(ChrisApp):
                            'Columns',
                            'CollimatorRightVerticalEdge',
                            'CollimatorLowerHorizontalEdge']
-                           
-        img_str_glob = '%s/%s' % (options.inputdir,options.inputImageFilter)        
+
+        img_str_glob = '%s/%s' % (options.inputdir,options.inputImageFilter)
         l_img_datapath = glob.glob(img_str_glob, recursive=True)
-        
-        dcm_str_glob = '%s/%s' % (options.inputdir,options.inputDCMFilter)        
-        l_dcm_datapath = glob.glob(dcm_str_glob, recursive=True)  
-        
+
+        dcm_str_glob = '%s/%s' % (options.inputdir,options.inputDCMFilter)
+        l_dcm_datapath = glob.glob(dcm_str_glob, recursive=True)
+
         dcm_dirs = []
         for dcm_datapath in l_dcm_datapath:
             dcm_dirs.append(os.path.dirname(dcm_datapath))
-            
+
         unique_dcm_dirs = set(dcm_dirs)
-        
-        
+
+
         for dcm_dir in unique_dcm_dirs:
             output_dirpath = dcm_dir.replace(options.inputdir,options.outputdir)
             os.makedirs(output_dirpath,exist_ok=True)
-            
+
             unique_series_uid = dicom.uid.generate_uid()
-            print(f"\n\nGenerated series instance uid is {unique_series_uid}")
-            
+            LOG(f"\n\nGenerated series instance uid is {unique_series_uid}")
+
             # traverse through all dicom files in this dir
             for file in glob.glob(dcm_dir + options.inputDCMFilter):
                 dcm_image = dicom.dcmread(file)
@@ -204,28 +231,29 @@ class Img2dcm(ChrisApp):
                         img = sitk.ReadImage(img_datapath)
                         writer = sitk.ImageFileWriter()
                         writer.SetFileName(temp_dcm_file)
-                        writer.Execute(img) 
-                        
+                        writer.Execute(img)
+
                         tmp_dcm_image = dicom.dcmread(temp_dcm_file)
-                        print("Setting file meta information...")
+                        LOG("Setting file meta information...")
                         for item in dcm_image.dir():
                             if item not in no_include_tags:
                                 tmp_dcm_image[item] = dcm_image[item]
-                        print(f"Setting Series Instance UID {unique_series_uid}")
+                        LOG(f"Setting Series Instance UID {unique_series_uid}")
                         tmp_dcm_image.SeriesInstanceUID = unique_series_uid
                         tmp_dcm_image.CollimatorRightVerticalEdge = str(tmp_dcm_image.Columns + 1)
                         tmp_dcm_image.CollimatorLowerHorizontalEdge = str(tmp_dcm_image.Rows + 1)
-                        
+
                         #dcm_file_stem = str(tmp_dcm_image.InstanceNumber) + '-' + unique_series_uid
-                        print("Writing dicom file", dcm_file_stem+".dcm")
-                        
+                        LOG("Writing dicom file", dcm_file_stem+".dcm")
+
                         tmp_dcm_image.save_as(os.path.join(output_dirpath,dcm_file_stem+".dcm"))
-                        print("File saved.")    
-        
-             
+                        LOG("File saved.")
+        et: float = time.time()
+        LOG("Execution time: %f seconds." % (et -st))
+
 
     def show_man_page(self):
         """
         Print the app's man page.
         """
-        print(Gstr_synopsis)
+        LOG(Gstr_synopsis)

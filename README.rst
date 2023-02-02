@@ -17,16 +17,14 @@ pl-img2dcm
 Abstract
 --------
 
-An app to convert an input image to a DICOM file
+An app to convert an input image to a DICOM format
 
 
 Description
 -----------
 
 
-``img2dcm`` is a *ChRIS ds-type* application that takes in png & dcm files as input
-and converts png files to dcm files as output
-
+``img2dcm`` is a *ChRIS ds-type*  is an app that simply converts an input image (jpg/png) to a DICOM format. It does require a base/reference DICOM image from which to import the tag header information.
 
 Usage
 -----
@@ -34,8 +32,8 @@ Usage
 .. code::
 
     docker run --rm fnndsc/pl-img2dcm img2dcm
-        [-i|--inputImageFilter <imageFilter>]                      
-        [-d|--inputDCMFilter <dicomFilter>]                      
+        [-i|--inputImageFilter <imageFilter>]
+        [-d|--inputDCMFilter <dicomFilter>]
         [-h|--help]
         [--json] [--man] [--meta]
         [--savejson <DIR>]
@@ -52,31 +50,31 @@ Arguments
     [-i|--inputImageFilter <imageFilter>]
     A glob pattern string, default is "**/*.png", representing the input
     file pattern to analyze.
-    
+
     [-d|--inputDCMFilter <dicomFilter>]
     A glob pattern string, default is "**/*.dcm", representing the input
     dicom files to fetch tags.
 
     [-h] [--help]
     If specified, show help message and exit.
-    
+
     [--json]
     If specified, show json representation of app and exit.
-    
+
     [--man]
     If specified, print (this) man page and exit.
 
     [--meta]
     If specified, print plugin meta data and exit.
-    
-    [--savejson <DIR>] 
-    If specified, save json representation file to DIR and exit. 
-    
+
+    [--savejson <DIR>]
+    If specified, save json representation file to DIR and exit.
+
     [-v <level>] [--verbosity <level>]
     Verbosity level for app. Not used currently.
-    
+
     [--version]
-    If specified, print version number and exit. 
+    If specified, print version number and exit.
 
 
 Getting inline help is:
