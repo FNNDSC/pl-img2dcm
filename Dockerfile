@@ -32,4 +32,4 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN pip install .
 
-CMD ["img2dcm", "--help"]
+CMD ["img2dcm", "--man"]

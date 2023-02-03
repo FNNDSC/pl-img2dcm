@@ -15,6 +15,8 @@ import pydicom as dicom
 import glob
 from pydicom import dcmread
 import time
+from    loguru                  import logger
+LOG             = logger.debug
 logger_format = (
     "<green>{time:YYYY-MM-DD HH:mm:ss}</green> │ "
     "<level>{level: <5}</level> │ "
