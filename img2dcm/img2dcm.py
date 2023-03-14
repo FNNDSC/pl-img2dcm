@@ -15,7 +15,15 @@ import pydicom as dicom
 import glob
 from pydicom import dcmread
 import time
-from    loguru                  import logger
+from    loguru              import logger
+
+from    pftag               import pftag
+from    pflog               import pflog
+
+from    argparse            import Namespace
+from    datetime            import datetime
+
+
 LOG             = logger.debug
 logger_format = (
     "<green>{time:YYYY-MM-DD HH:mm:ss}</green> │ "
@@ -52,6 +60,7 @@ Gstr_synopsis = """
         docker run --rm fnndsc/pl-img2dcm img2dcm                       \\
             [-i|--inputImageFilter <imageFilter>]                       \\
             [-d|--inputDCMFilter <dicomFilter>]                         \\
+            [--pftelDB <DBURLpath>]                                     \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -86,6 +95,25 @@ Gstr_synopsis = """
         [-d|--inputDCMFilter <dicomFilter>]
         A glob pattern string, default is "**/*.dcm", representing the input
         dicom files to fetch tags.
+
+        [--pftelDB <DBURLpath>]
+        If specified, send telemetry logging to the pftel server and the
+        specfied DBpath:
+
+            --pftelDB   <URLpath>/<logObject>/<logCollection>/<logEvent>
+
+        for example
+
+            --pftelDB http://localhost:22223/api/v1/weather/massachusetts/boston
+
+        Indirect parsing of each of the object, collection, event strings is
+        available through `pftag` so any embedded pftag SGML is supported. So
+
+            http://localhost:22223/api/vi/%platform/%timestamp_strmsk|**********_/%name
+
+        would be parsed to, for example:
+
+            http://localhost:22223/api/vi/Linux/2023-03-11/posix
 
         [-h] [--help]
         If specified, show help message and exit.
@@ -158,6 +186,13 @@ class Img2dcm(ChrisApp):
                             optional     = True,
                             help         = 'Input dicom file filter',
                             default      = '**/*.dcm')
+        self.add_argument(  '--pftelDB',
+                            dest        = 'pftelDB',
+                            default     = '',
+                            type        = str,
+                            optional    = True,
+                            help        = 'optional pftel server DB path'
+                        )
 
     def preamble_show(self, options) -> None:
         """
@@ -177,11 +212,37 @@ class Img2dcm(ChrisApp):
              LOG("%25s:  [%s]" % (k, v))
         LOG("")
 
+    def epilogue(self, options:Namespace, dt_start:datetime = None) -> None:
+        """
+        Some epilogue cleanup -- basically determine a delta time
+        between passed epoch and current, and if indicated in CLI
+        pflog this.
+
+        Args:
+            options (Namespace): option space
+            dt_start (datetime): optional start date
+        """
+        tagger:pftag.Pftag  = pftag.Pftag({})
+        dt_end:datetime     = pftag.timestamp_dt(tagger(r'%timestamp')['result'])
+        ft:float            = 0.0
+        if dt_start:
+            ft              = (dt_end - dt_start).total_seconds()
+        if options.pftelDB:
+            options.pftelDB = '/'.join(options.pftelDB.split('/')[:-1] + ['img-to-dcm'])
+            d_log:dict      = pflog.pfprint(
+                                options.pftelDB,
+                                f"Shutting down after {ft} seconds.",
+                                appName     = 'pl-img2dcm',
+                                execTime    = ft
+                            )
+
     def run(self, options):
         """
         Define the code to be run by this plugin app.
         """
         st: float = time.time()
+        tagger:pftag.Pftag  = pftag.Pftag({})
+        dt_start:datetime   = pftag.timestamp_dt(tagger(r'%timestamp')['result'])
         self.preamble_show(options)
 
         # List of dicom tags to be ignore while copying from DICOM files
@@ -252,7 +313,7 @@ class Img2dcm(ChrisApp):
                         LOG("File saved.")
         et: float = time.time()
         LOG("Execution time: %f seconds." % (et -st))
-
+        self.epilogue(options, dt_start)
 
     def show_man_page(self):
         """
