@@ -6,7 +6,7 @@ with open(path.join(path.dirname(path.abspath(__file__)), 'README.rst')) as f:
 
 setup(
     name             = 'img2dcm',
-    version          = '1.0.10',
+    version          = '1.0.12',
     description      = 'An app to convert an input image to a DICOM file',
     long_description = readme,
     author           = 'FNNDSC',
