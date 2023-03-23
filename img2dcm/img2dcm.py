@@ -212,37 +212,14 @@ class Img2dcm(ChrisApp):
              LOG("%25s:  [%s]" % (k, v))
         LOG("")
 
-    def epilogue(self, options:Namespace, dt_start:datetime = None) -> None:
-        """
-        Some epilogue cleanup -- basically determine a delta time
-        between passed epoch and current, and if indicated in CLI
-        pflog this.
-
-        Args:
-            options (Namespace): option space
-            dt_start (datetime): optional start date
-        """
-        tagger:pftag.Pftag  = pftag.Pftag({})
-        dt_end:datetime     = pftag.timestamp_dt(tagger(r'%timestamp')['result'])
-        ft:float            = 0.0
-        if dt_start:
-            ft              = (dt_end - dt_start).total_seconds()
-        if options.pftelDB:
-            options.pftelDB = '/'.join(options.pftelDB.split('/')[:-1] + ['img-to-dcm'])
-            d_log:dict      = pflog.pfprint(
-                                options.pftelDB,
-                                f"Shutting down after {ft} seconds.",
-                                appName     = 'pl-img2dcm',
-                                execTime    = ft
-                            )
-
+    @pflog.tel_logTime(
+            event       = 'img2dcm',
+            log         = 'Convert a jpg image back to DICOM using upstream header info'
+    )
     def run(self, options):
         """
         Define the code to be run by this plugin app.
         """
-        st: float = time.time()
-        tagger:pftag.Pftag  = pftag.Pftag({})
-        dt_start:datetime   = pftag.timestamp_dt(tagger(r'%timestamp')['result'])
         self.preamble_show(options)
 
         # List of dicom tags to be ignore while copying from DICOM files
@@ -311,9 +288,6 @@ class Img2dcm(ChrisApp):
 
                         tmp_dcm_image.save_as(os.path.join(output_dirpath,dcm_file_stem+".dcm"))
                         LOG("File saved.")
-        et: float = time.time()
-        LOG("Execution time: %f seconds." % (et -st))
-        self.epilogue(options, dt_start)
 
     def show_man_page(self):
         """
